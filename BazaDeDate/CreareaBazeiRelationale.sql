@@ -1,0 +1,69 @@
+---Stergerea bazei de date daca exista deja:
+IF OBJECT_ID('REZOLVA', 'U') IS NOT NULL
+    DROP TABLE REZOLVA;
+
+IF OBJECT_ID('ELEV', 'U') IS NOT NULL
+    DROP TABLE ELEV;
+
+IF OBJECT_ID('EXERCITIU', 'U') IS NOT NULL
+    DROP TABLE EXERCITIU;
+
+IF OBJECT_ID('LECTIE', 'U') IS NOT NULL
+    DROP TABLE LECTIE;
+
+IF OBJECT_ID('SUBIECT', 'U') IS NOT NULL
+    DROP TABLE SUBIECT;
+
+
+
+
+---Crearea tabelelor:
+CREATE TABLE SUBIECT (
+    id_subiect INT IDENTITY(1,1) PRIMARY KEY,
+    cifra_romana NVARCHAR(10) NOT NULL,
+    cifra_araba SMALLINT NOT NULL
+);
+--IDENTITY(1,1)--autoincrement de la 1
+
+
+CREATE TABLE LECTIE (
+    id_lectie INT IDENTITY(1,1) PRIMARY KEY,
+    id_subiect INT NOT NULL,
+    denumire NVARCHAR(250) UNIQUE NOT NULL,
+    CONSTRAINT FK_LECTIE_SUBIECT FOREIGN KEY (id_subiect) REFERENCES SUBIECT(id_subiect)
+);
+---Folosesc NVARCHAR pentru a permite caractere speciale si diacritice, si pentru dimensiunea sa mare.
+
+
+CREATE TABLE EXERCITIU (
+    id_exercitiu INT IDENTITY(1,1) PRIMARY KEY,
+    id_lectie INT NOT NULL,
+    enunt NVARCHAR(MAX) NOT NULL,
+    rezolvare NVARCHAR(MAX) NOT NULL,
+    dificultate SMALLINT NOT NULL,
+    CONSTRAINT FK_EXERCITIU_LECTIE FOREIGN KEY (id_lectie) REFERENCES LECTIE(id_lectie),
+    CONSTRAINT CHK_EXERCITIU_DIFICULTATE CHECK (dificultate BETWEEN 1 AND 3)
+);
+
+
+CREATE TABLE ELEV (
+    id_elev INT IDENTITY(1,1) PRIMARY KEY,
+    id_lectie INT NOT NULL,
+    nume NVARCHAR(250) UNIQUE NOT NULL,
+    parola NVARCHAR(MAX) NOT NULL,--stocare securizata a parolei
+    email NVARCHAR(250) UNIQUE NOT NULL,
+    scor INT DEFAULT 0 NOT NULL,
+    CONSTRAINT FK_ELEV_LECTIE FOREIGN KEY (id_lectie) REFERENCES LECTIE(id_lectie)
+);
+
+
+CREATE TABLE REZOLVA (
+    id_elev INT,
+    id_exercitiu INT,
+    status SMALLINT NOT NULL,
+    data DATETIME2 DEFAULT GETDATE() NOT NULL,
+    CONSTRAINT PK_REZOLVA PRIMARY KEY (id_elev, id_exercitiu),
+    CONSTRAINT FK_REZOLVA_ELEV FOREIGN KEY (id_elev) REFERENCES ELEV(id_elev) ON DELETE CASCADE,
+    CONSTRAINT FK_REZOLVA_EXERCITIU FOREIGN KEY (id_exercitiu) REFERENCES EXERCITIU(id_exercitiu) ON DELETE CASCADE,
+    CONSTRAINT CHK_REZOLVA_STATUS CHECK (status IN (0,1))
+);
